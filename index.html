@@ -18,7 +18,7 @@
     header { padding: 16px 14px; background:#fff; position: sticky; top:0; border-bottom:1px solid #e6e6e6; z-index:10; }
     h1 { font-size:18px; margin:0 0 8px; }
     .tabs { display:flex; gap:8px; flex-wrap:wrap; }
-    button.tab { border:1px solid #d7d7d7; background:#fff; padding:8px 10px; border-radius:10px; font-size:14px; }
+    button.tab { border:1px solid #d7d7d7; background:#fff; padding:8px 10px; border-radius:10px; font-size:14px; cursor:pointer; }
     button.tab.active { border-color:#111; }
     main { padding:14px; max-width:900px; margin:0 auto; }
     .card { background:#fff; border:1px solid #e6e6e6; border-radius:14px; padding:12px; margin-bottom:12px; }
@@ -31,7 +31,7 @@
     }
     textarea { resize: vertical; }
     .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
-    .btn { border:1px solid #d7d7d7; background:#fff; padding:12px 12px; border-radius:12px; font-size:15px; }
+    .btn { border:1px solid #d7d7d7; background:#fff; padding:12px 12px; border-radius:12px; font-size:15px; cursor:pointer; }
     .btn.primary { border-color:#111; }
     .pill { display:inline-block; padding:6px 12px; border:1px solid #ddd; border-radius:999px; font-size:13px; background:#fafafa; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
@@ -47,8 +47,8 @@
     details summary { cursor:pointer; }
   </style>
 
-  <!-- Supabase JS (UMD) -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <!-- IMPORTANT: local supabase library (you must upload supabase.js in the repo root) -->
+  <script src="./supabase.js"></script>
 </head>
 
 <body>
@@ -124,10 +124,9 @@
       </div>
 
       <details style="margin-top:10px">
-        <summary class="muted">Restore Device ID (important if you change phone or browser storage wipes)</summary>
+        <summary class="muted">Restore Device ID (if phone changes or storage wipes)</summary>
         <div class="muted" style="margin-top:10px; line-height:1.4">
-          If your app ever looks “empty”, your data is probably under an older Device ID.
-          Paste your old Device ID below to reconnect to your existing data.
+          If the app ever looks empty, paste your old Device ID below to reconnect to your existing data.
         </div>
         <div class="row" style="margin-top:10px">
           <div>
@@ -138,9 +137,6 @@
             <label>&nbsp;</label>
             <button class="btn primary" id="restore-device-btn">Restore & Reload</button>
           </div>
-        </div>
-        <div class="muted tiny" style="margin-top:8px">
-          Tip: After you start using the app, save your Device ID somewhere safe (Notes app).
         </div>
       </details>
 
@@ -189,7 +185,6 @@
         <div>
           <label>Food name</label>
           <input id="q-name" placeholder="e.g., cheese brand, restaurant item..." />
-          <div class="muted tiny" style="margin-top:6px">Use for one-offs. Optionally save to library.</div>
         </div>
         <div>
           <label>When</label>
@@ -207,8 +202,8 @@
         <div>
           <label>Mode</label>
           <select id="q-mode">
-            <option value="per100g">Per 100g (recommended for cheese)</option>
-            <option value="perUnit">Per serving/unit</option>
+            <option value="per100g">Per 100g</option>
+            <option value="perUnit">Per unit</option>
           </select>
         </div>
         <div>
@@ -283,9 +278,6 @@
             <option>Other</option>
           </select>
 
-          <label style="margin-top:10px">Notes (optional)</label>
-          <input id="lib-notes" />
-
           <div class="actions">
             <button class="btn primary" id="lib-add">Add</button>
             <button class="btn" id="lib-refresh">Refresh library</button>
@@ -359,7 +351,6 @@
               <th class="right">Amt</th>
               <th class="right">Carbs</th>
               <th class="right">kcal</th>
-              <th>Notes</th>
             </tr>
           </thead>
           <tbody id="f-tbody"></tbody>
@@ -393,22 +384,15 @@
         </label>
       </div>
 
-      <details style="margin-top:10px">
-        <summary class="muted">Supabase connection (read only)</summary>
-        <div class="muted tiny" style="margin-top:10px">
-          This app uses your Supabase Project URL + anon key (inside your index.html file).
-        </div>
-      </details>
-
       <div class="muted tiny" style="margin-top:10px">
-        No-login mode: your app uses a random <span class="mono">device_id</span> stored on this device to separate your data.
+        No-login mode: your app uses a <span class="mono">device_id</span> stored on this device to separate your data.
       </div>
     </div>
   </section>
 </main>
 
 <script>
-/*** CONFIG: paste your Supabase settings here ***/
+/*** CONFIG (already filled with your keys) ***/
 const SUPABASE_URL = "https://fyxmnlnxtpufxrtblvwr.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5eG1ubG54dHB1ZnhydGJsdndyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5ODEyMDYsImV4cCI6MjA4MzU1NzIwNn0.NJRsMPMkJbX2TpBbGoXbFuE_u7w9EZJ0XXZ5RFxCgec";
 
@@ -430,22 +414,22 @@ const nowLocalDatetime = () => {
 const uuid = () => (crypto?.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)+String(Date.now()));
 const esc = (s) => String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
 
-/*** Device ID (separates your data without login) ***/
-const DEVICE_KEY = "kt_device_id_v2";
+/*** Device ID (no login) ***/
+const DEVICE_KEY = "kt_device_id_v3";
 let DEVICE_ID = localStorage.getItem(DEVICE_KEY);
 if (!DEVICE_ID) { DEVICE_ID = uuid(); localStorage.setItem(DEVICE_KEY, DEVICE_ID); }
 
 /*** Local settings ***/
-const SETTINGS_KEY = "kt_settings_v2";
+const SETTINGS_KEY = "kt_settings_v3";
 let settings = { deep: 40, mod: 80 };
 try { settings = { ...settings, ...(JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}")) }; } catch {}
 const saveSettings = () => localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 
-/*** Supabase client ***/
-if (SUPABASE_URL.startsWith("PASTE_") || SUPABASE_ANON_KEY.startsWith("PASTE_")) {
-  alert("Edit index.html and paste your Supabase URL + anon key.");
+/*** Supabase client (IMPORTANT: use sb, not supabase) ***/
+if (!window.supabase || !window.supabase.createClient) {
+  alert("Supabase library not loaded. Make sure supabase.js is uploaded in the repo root.");
 }
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /*** PWA Service Worker ***/
 if ("serviceWorker" in navigator) {
@@ -463,7 +447,7 @@ tabButtons.forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)
 
 /*** Zone helpers ***/
 function zoneForRatio(r){
-  if (!Number.isFinite(r)) return {label:"—", cls:""};
+  if (!Number.isFinite(r)) return {label:"—", cls:"", short:"—"};
   if (r < settings.deep) return {label:`Deep (<${settings.deep})`, cls:"success", short:"Deep"};
   if (r <= settings.mod) return {label:`Moderate (${settings.deep}–${settings.mod})`, cls:"warn", short:"Moderate"};
   return {label:`Glucose (>${settings.mod})`, cls:"danger", short:"Glucose"};
@@ -473,28 +457,20 @@ function zoneForRatio(r){
 $("device-id").textContent = DEVICE_ID;
 
 $("copy-device").addEventListener("click", async () => {
-  try {
-    await navigator.clipboard.writeText(DEVICE_ID);
-    alert("Device ID copied. Paste it into Notes to keep it safe.");
-  } catch {
-    alert("Copy failed. Please manually select and copy the Device ID.");
-  }
+  try { await navigator.clipboard.writeText(DEVICE_ID); alert("Device ID copied. Save it in Notes."); }
+  catch { alert("Copy failed. Manually copy the Device ID."); }
 });
 
 $("restore-device-btn").addEventListener("click", async () => {
   const v = $("restore-device-id").value.trim();
   if (!v) return alert("Paste the old Device ID first.");
   if (!confirm("Restore this Device ID on this device and reload?")) return;
-
   DEVICE_ID = v;
   localStorage.setItem(DEVICE_KEY, DEVICE_ID);
   $("device-id").textContent = DEVICE_ID;
   $("restore-device-id").value = "";
-
-  await loadMetrics();
-  await loadLibrary();
-  await loadFoodDay();
-  alert("Restored. If your data existed under that Device ID, it will show now.");
+  await loadMetrics(); await loadLibrary(); await loadFoodDay();
+  alert("Restored.");
 });
 
 /*** Metrics UI ***/
@@ -527,54 +503,40 @@ async function saveMetric(contextOverride=null){
   const notes = $("m-notes").value || "";
 
   $("m-sync").textContent = "Saving...";
-  const { error } = await supabase.from("metrics_log").insert([{
-    device_id: DEVICE_ID,
-    ts,
-    context,
-    glucose_mmol: g,
-    ketones_mmol: k,
-    glucose_mgdl: mgdl,
-    ratio,
-    zone: z.short,
-    notes
+  const { error } = await sb.from("metrics_log").insert([{
+    device_id: DEVICE_ID, ts, context,
+    glucose_mmol: g, ketones_mmol: k,
+    glucose_mgdl: mgdl, ratio, zone: z.short, notes
   }]);
-
   if (error) { $("m-sync").textContent = "Save failed."; return alert(error.message); }
 
   $("m-sync").textContent = "Saved ✓";
-  $("m-glucose").value = "";
-  $("m-ketones").value = "";
-  $("m-notes").value = "";
+  $("m-glucose").value = ""; $("m-ketones").value = ""; $("m-notes").value = "";
   metricsPreview();
   await loadMetrics();
 }
 
 $("m-save").addEventListener("click", () => saveMetric());
-$("m-fasting").addEventListener("click", () => { $("m-context").value = "Fasting AM"; saveMetric("Fasting AM"); });
+$("m-fasting").addEventListener("click", () => { $("m-context").value="Fasting AM"; saveMetric("Fasting AM"); });
 $("m-refresh").addEventListener("click", () => loadMetrics());
 
 async function loadMetrics(){
   $("m-sync").textContent = "Loading...";
-  const { data, error } = await supabase
-    .from("metrics_log")
-    .select("*")
-    .eq("device_id", DEVICE_ID)
-    .order("ts", { ascending:false })
-    .limit(100);
+  const { data, error } = await sb.from("metrics_log")
+    .select("*").eq("device_id", DEVICE_ID)
+    .order("ts", { ascending:false }).limit(100);
 
   if (error) { $("m-sync").textContent = "Load failed."; return; }
 
   const tb = $("m-tbody");
   tb.innerHTML = "";
-
   for (const r of (data||[])) {
     const d = new Date(r.ts);
-    const t = d.toLocaleString();
     const ratio = Number(r.ratio);
     const z = zoneForRatio(ratio);
     tb.insertAdjacentHTML("beforeend", `
       <tr>
-        <td>${esc(t)}</td>
+        <td>${esc(d.toLocaleString())}</td>
         <td>${esc(r.context||"")}</td>
         <td class="right">${esc(round(Number(r.glucose_mmol),1))}</td>
         <td class="right">${esc(round(Number(r.ketones_mmol),2))}</td>
@@ -584,7 +546,6 @@ async function loadMetrics(){
       </tr>
     `);
   }
-
   $("m-sync").textContent = "";
 }
 
@@ -619,7 +580,6 @@ async function addQuickFood(){
   const carbsBase = parseNum($("q-carbs").value);
   const kcalBase = parseNum($("q-kcal").value);
   const saveToLib = $("q-save").value === "yes";
-  const notes = $("q-notes").value.trim();
 
   if (!name) return alert("Enter food name.");
   if (!Number.isFinite(amount) || amount<=0) return alert("Enter amount.");
@@ -629,57 +589,28 @@ async function addQuickFood(){
   const t = totals(mode, carbsBase, kcalBase, amount);
 
   $("f-sync").textContent = "Saving...";
-  const { error } = await supabase.from("food_log").insert([{
-    device_id: DEVICE_ID,
-    day,
-    meal,
-    name,
-    mode,
-    amount,
-    carbs_total: t.carbs,
-    kcal_total: t.kcal
+  const { error } = await sb.from("food_log").insert([{
+    device_id: DEVICE_ID, day, meal, name, mode, amount,
+    carbs_total: t.carbs, kcal_total: t.kcal
   }]);
-
   if (error) { $("f-sync").textContent="Save failed."; return alert(error.message); }
 
   if (saveToLib) {
-    // upsert by (device_id + name)
-    const { data: existing } = await supabase
-      .from("food_library")
-      .select("id")
-      .eq("device_id", DEVICE_ID)
-      .eq("name", name)
-      .limit(1);
+    const { data: existing } = await sb.from("food_library")
+      .select("id").eq("device_id", DEVICE_ID).eq("name", name).limit(1);
 
     if (existing && existing.length) {
-      await supabase.from("food_library").update({
-        mode,
-        carbs_base: carbsBase,
-        kcal_base: kcalBase
-      }).eq("id", existing[0].id);
+      await sb.from("food_library").update({ mode, carbs_base: carbsBase, kcal_base: kcalBase }).eq("id", existing[0].id);
     } else {
-      await supabase.from("food_library").insert([{
-        device_id: DEVICE_ID,
-        name,
-        mode,
-        carbs_base: carbsBase,
-        kcal_base: kcalBase,
-        fav: false
-      }]);
+      await sb.from("food_library").insert([{ device_id: DEVICE_ID, name, mode, carbs_base: carbsBase, kcal_base: kcalBase, fav: false }]);
     }
     await loadLibrary();
   }
 
-  $("q-name").value = "";
-  $("q-carbs").value = "";
-  $("q-kcal").value = "";
-  $("q-notes").value = "";
-  $("q-save").value = "no";
-
-  $("f-sync").textContent = "Saved ✓";
+  $("q-name").value=""; $("q-carbs").value=""; $("q-kcal").value=""; $("q-notes").value=""; $("q-save").value="no";
+  $("f-sync").textContent="Saved ✓";
   await loadFoodDay();
 }
-
 $("q-add").addEventListener("click", addQuickFood);
 
 let libraryCache = [];
@@ -687,27 +618,21 @@ function renderLibrary(){
   const q = $("lib-search").value.trim().toLowerCase();
   const show = $("lib-show").value;
   let list = [...libraryCache];
-
   if (show==="fav") list = list.filter(x => x.fav);
   if (q) list = list.filter(x => (x.name||"").toLowerCase().includes(q));
-
-  // favorites first then name
   list.sort((a,b) => (b.fav?1:0)-(a.fav?1:0) || (a.name||"").localeCompare(b.name||""));
 
   const pick = $("lib-pick");
   const selected = pick.value;
   pick.innerHTML = list.map(x => {
     const star = x.fav ? "⭐ " : "";
-    const base = x.mode==="per100g"
-      ? `C:${x.carbs_base}/100g, ${x.kcal_base}/100g`
-      : `C:${x.carbs_base}/unit, ${x.kcal_base}/unit`;
+    const base = x.mode==="per100g" ? `C:${x.carbs_base}/100g, ${x.kcal_base}/100g` : `C:${x.carbs_base}/unit, ${x.kcal_base}/unit`;
     return `<option value="${x.id}">${star}${esc(x.name)} (${base})</option>`;
   }).join("") || `<option disabled>(no foods)</option>`;
 
   if ([...pick.options].some(o => o.value===selected)) pick.value = selected;
   syncLibrarySelection();
 }
-
 $("lib-search").addEventListener("input", () => { clearTimeout(window.__ls); window.__ls=setTimeout(renderLibrary,120); });
 $("lib-show").addEventListener("change", renderLibrary);
 $("lib-pick").addEventListener("change", syncLibrarySelection);
@@ -716,11 +641,8 @@ function syncLibrarySelection(){
   const id = $("lib-pick").value;
   const f = libraryCache.find(x => String(x.id)===String(id));
   if (!f) { $("lib-hint").textContent=""; return; }
-
   $("lib-amount-label").textContent = (f.mode==="per100g" ? "Grams eaten" : "Units/servings");
   $("lib-hint").textContent = f.mode==="per100g" ? "Example: enter 32 for 32g." : "Example: enter 2 for 2 servings.";
-
-  // keep manage form in sync
   $("lib-name").value = f.name || "";
   $("lib-fav").value = String(!!f.fav);
   $("lib-mode").value = f.mode;
@@ -728,7 +650,6 @@ function syncLibrarySelection(){
   $("lib-kcal").value = f.kcal_base;
   syncManageLabels();
 }
-
 function syncManageLabels(){
   const mode = $("lib-mode").value;
   $("lib-carbs-label2").textContent = (mode==="per100g" ? "Carbs per 100g" : "Carbs per unit");
@@ -738,27 +659,18 @@ $("lib-mode").addEventListener("change", syncManageLabels);
 syncManageLabels();
 
 $("lib-prefill").addEventListener("click", () => {
-  // Prefill manage form from selected in picker (already mostly done)
   const id = $("lib-pick").value;
   const f = libraryCache.find(x => String(x.id)===String(id));
   if (!f) return alert("Select a library item first.");
-  $("lib-name").value = f.name || "";
-  $("lib-fav").value = String(!!f.fav);
-  $("lib-mode").value = f.mode;
-  $("lib-carbs").value = f.carbs_base;
-  $("lib-kcal").value = f.kcal_base;
+  $("lib-name").value=f.name||""; $("lib-fav").value=String(!!f.fav); $("lib-mode").value=f.mode;
+  $("lib-carbs").value=f.carbs_base; $("lib-kcal").value=f.kcal_base;
   syncManageLabels();
 });
 
 async function loadLibrary(){
   $("f-sync").textContent = "Loading library...";
-  const { data, error } = await supabase
-    .from("food_library")
-    .select("*")
-    .eq("device_id", DEVICE_ID)
-    .order("name", { ascending:true })
-    .limit(1000);
-
+  const { data, error } = await sb.from("food_library")
+    .select("*").eq("device_id", DEVICE_ID).order("name", {ascending:true}).limit(1000);
   if (error) { $("f-sync").textContent="Library load failed."; return; }
   libraryCache = data || [];
   renderLibrary();
@@ -768,102 +680,67 @@ async function loadLibrary(){
 async function addFromLibrary(){
   const day = $("f-day").value;
   const meal = $("lib-meal").value;
-  const notes = ($("lib-notes").value || "").trim();
-
   const id = $("lib-pick").value;
   const f = libraryCache.find(x => String(x.id)===String(id));
   if (!f) return alert("Pick a food.");
-
   const amount = parseNum($("lib-amount").value);
   if (!Number.isFinite(amount) || amount<=0) return alert("Enter amount.");
-
   const t = totals(f.mode, Number(f.carbs_base), Number(f.kcal_base), amount);
 
   $("f-sync").textContent = "Saving...";
-  const { error } = await supabase.from("food_log").insert([{
-    device_id: DEVICE_ID,
-    day,
-    meal,
-    name: f.name,
-    mode: f.mode,
-    amount,
-    carbs_total: t.carbs,
-    kcal_total: t.kcal
+  const { error } = await sb.from("food_log").insert([{
+    device_id: DEVICE_ID, day, meal,
+    name: f.name, mode: f.mode, amount,
+    carbs_total: t.carbs, kcal_total: t.kcal
   }]);
-
   if (error) { $("f-sync").textContent="Save failed."; return alert(error.message); }
-
-  $("lib-notes").value = "";
-  $("f-sync").textContent = "Saved ✓";
+  $("f-sync").textContent="Saved ✓";
   await loadFoodDay();
 }
-
 $("lib-add").addEventListener("click", addFromLibrary);
 
 async function saveLibraryItem(){
   const id = $("lib-pick").value || null;
-
   const name = $("lib-name").value.trim();
   const fav = $("lib-fav").value === "true";
   const mode = $("lib-mode").value;
   const carbs = parseNum($("lib-carbs").value);
   const kcal  = parseNum($("lib-kcal").value);
-
   if (!name) return alert("Enter name.");
   if (!Number.isFinite(carbs) || carbs<0) return alert("Enter carbs.");
   if (!Number.isFinite(kcal) || kcal<0) return alert("Enter kcal.");
 
   $("f-sync").textContent = "Saving library...";
-
-  // Update existing selected row if it exists; otherwise insert new
   if (id) {
-    const { error } = await supabase.from("food_library").update({
-      name, fav, mode, carbs_base: carbs, kcal_base: kcal
-    }).eq("id", id);
-
+    const { error } = await sb.from("food_library").update({ name,fav,mode,carbs_base:carbs,kcal_base:kcal }).eq("id", id);
     if (error) { $("f-sync").textContent="Save failed."; return alert(error.message); }
   } else {
-    const { error } = await supabase.from("food_library").insert([{
-      device_id: DEVICE_ID,
-      name, fav, mode,
-      carbs_base: carbs,
-      kcal_base: kcal
-    }]);
+    const { error } = await sb.from("food_library").insert([{ device_id: DEVICE_ID, name,fav,mode,carbs_base:carbs,kcal_base:kcal }]);
     if (error) { $("f-sync").textContent="Save failed."; return alert(error.message); }
   }
-
-  $("f-sync").textContent = "Saved ✓";
+  $("f-sync").textContent="Saved ✓";
   await loadLibrary();
 }
-
 $("lib-save").addEventListener("click", saveLibraryItem);
 
 async function deleteLibraryItem(){
   const id = $("lib-pick").value;
   if (!id) return alert("Pick an item to delete.");
   if (!confirm("Delete this food from library?")) return;
-
-  $("f-sync").textContent = "Deleting...";
-  const { error } = await supabase.from("food_library").delete().eq("id", id);
+  $("f-sync").textContent="Deleting...";
+  const { error } = await sb.from("food_library").delete().eq("id", id);
   if (error) { $("f-sync").textContent="Delete failed."; return alert(error.message); }
-
-  $("f-sync").textContent = "Deleted ✓";
+  $("f-sync").textContent="Deleted ✓";
   await loadLibrary();
 }
 $("lib-delete").addEventListener("click", deleteLibraryItem);
 
 async function loadFoodDay(){
   const day = $("f-day").value;
-
   $("f-sync").textContent = "Loading day...";
-  const { data, error } = await supabase
-    .from("food_log")
-    .select("*")
-    .eq("device_id", DEVICE_ID)
-    .eq("day", day)
-    .order("id", { ascending:false })
-    .limit(500);
-
+  const { data, error } = await sb.from("food_log")
+    .select("*").eq("device_id", DEVICE_ID).eq("day", day)
+    .order("id", {ascending:false}).limit(500);
   if (error) { $("f-sync").textContent="Load failed."; return; }
 
   const rows = data || [];
@@ -884,16 +761,11 @@ async function loadFoodDay(){
         <td class="right">${esc(round(Number(r.amount), r.mode==="per100g" ? 1 : 2))}${r.mode==="per100g" ? " g" : ""}</td>
         <td class="right">${esc(round(Number(r.carbs_total),2))}</td>
         <td class="right">${esc(Math.round(Number(r.kcal_total)))}</td>
-        <td>${esc(notesForFoodRow(r) || "")}</td>
       </tr>
     `);
   }
   $("f-sync").textContent = "";
 }
-
-// Because your simplified DB schema doesn't store notes in food_log,
-// we show blank here. If you later add notes column, we can use it.
-function notesForFoodRow(r){ return ""; }
 
 /*** Settings tab ***/
 $("s-deep").value = settings.deep;
@@ -911,10 +783,9 @@ $("s-save").addEventListener("click", () => {
 });
 
 $("s-export").addEventListener("click", async () => {
-  const { data: m } = await supabase.from("metrics_log").select("*").eq("device_id", DEVICE_ID);
-  const { data: fl } = await supabase.from("food_log").select("*").eq("device_id", DEVICE_ID);
-  const { data: lib } = await supabase.from("food_library").select("*").eq("device_id", DEVICE_ID);
-
+  const { data: m } = await sb.from("metrics_log").select("*").eq("device_id", DEVICE_ID);
+  const { data: fl } = await sb.from("food_log").select("*").eq("device_id", DEVICE_ID);
+  const { data: lib } = await sb.from("food_library").select("*").eq("device_id", DEVICE_ID);
   const blob = new Blob([JSON.stringify({ device_id: DEVICE_ID, settings, metrics: m||[], food_log: fl||[], food_library: lib||[] }, null, 2)], {type:"application/json"});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -929,11 +800,8 @@ $("s-import").addEventListener("change", async (ev) => {
   const text = await file.text();
   let obj;
   try { obj = JSON.parse(text); } catch { return alert("Bad JSON."); }
-
   if (!confirm("Import will ADD rows into your database for the CURRENT Device ID. Continue?")) return;
-  $("m-sync").textContent = "Importing...";
 
-  // Import metrics
   if (obj.metrics?.length) {
     const pack = obj.metrics.map(x => ({
       device_id: DEVICE_ID,
@@ -946,10 +814,8 @@ $("s-import").addEventListener("change", async (ev) => {
       zone: x.zone || "—",
       notes: x.notes || ""
     }));
-    await supabase.from("metrics_log").insert(pack);
+    await sb.from("metrics_log").insert(pack);
   }
-
-  // Import library
   if (obj.food_library?.length) {
     const pack = obj.food_library.map(x => ({
       device_id: DEVICE_ID,
@@ -959,10 +825,8 @@ $("s-import").addEventListener("change", async (ev) => {
       kcal_base: Number(x.kcal_base),
       fav: !!x.fav
     }));
-    await supabase.from("food_library").insert(pack);
+    await sb.from("food_library").insert(pack);
   }
-
-  // Import food log
   if (obj.food_log?.length) {
     const pack = obj.food_log.map(x => ({
       device_id: DEVICE_ID,
@@ -974,13 +838,10 @@ $("s-import").addEventListener("change", async (ev) => {
       carbs_total: Number(x.carbs_total),
       kcal_total: Number(x.kcal_total)
     }));
-    await supabase.from("food_log").insert(pack);
+    await sb.from("food_log").insert(pack);
   }
 
-  $("m-sync").textContent = "";
-  await loadMetrics();
-  await loadLibrary();
-  await loadFoodDay();
+  await loadMetrics(); await loadLibrary(); await loadFoodDay();
   alert("Import done.");
   ev.target.value = "";
 });
@@ -988,13 +849,9 @@ $("s-import").addEventListener("change", async (ev) => {
 /*** Init ***/
 $("m-dt").value = nowLocalDatetime();
 metricsPreview();
-
 loadMetrics();
 loadLibrary();
 loadFoodDay();
 </script>
 </body>
 </html>
-
-
-
